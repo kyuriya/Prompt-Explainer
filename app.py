@@ -3,6 +3,9 @@ import time
 import sys
 import os
 
+# Page Config
+st.set_page_config(page_title=" 이름 뭘로 하지", page_icon="👩‍💻")
+
 # Title
 st.title("이름 뭘로 하지")
 
