@@ -87,9 +87,31 @@ with col2:
         st.session_state.button_pressed = None
         st.session_state.system_prompt = None
 
-    #사용자 프롬프트에 대한 페이지 기록
+    # 사용자 프롬프트에 대한 페이지 기록
     if "page_history" not in st.session_state:
         st.session_state.page_history = []  # 사용자 프롬프트 기록 초기화
+        st.session_state.algorithm_counts = {}  # 알고리즘 카운터 초기화
+
+    def get_prompt_title(prompt):
+        """프롬프트에서 알고리즘 이름을 찾아 제목으로 반환"""
+        algorithms = ["DFS", "BFS", "DP", "Sort Algorithm", "Greedy Algorithm", "최단 경로 알고리즘"]
+        
+        for algo in algorithms:
+            if algo in prompt:
+                # 현재 알고리즘의 카운트 가져오기
+                count = st.session_state.algorithm_counts.get(algo, 0) + 1
+                st.session_state.algorithm_counts[algo] = count
+                
+                # 이전 프롬프트의 알고리즘과 비교
+                if st.session_state.page_history:
+                    last_title = st.session_state.page_history[-1].split(" #")[0]  # 번호 제외한 알고리즘 이름
+                    if last_title == algo:
+                        return f"{algo} #{count}"
+                    else:
+                        st.session_state.algorithm_counts[algo] = 1  # 카운트 리셋
+                        return algo
+                return algo
+        return prompt[:30] + "..."  # 알고리즘 키워드가 없는 경우 처음 30자만 표시
 
 #알고리즘 버튼 위치 조정
 algorithm_style = """
@@ -129,6 +151,7 @@ if prompt := (st.chat_input("프롬프트를 입력하세요.")):
 
     if prompt != "":
         query = prompt.strip()
+        prompt_title = get_prompt_title(prompt) #프롬프트 제목 생성
         #llm_response = API
         #contribution_scores = 기여도 계산 점수
 
@@ -139,7 +162,9 @@ if prompt := (st.chat_input("프롬프트를 입력하세요.")):
         #     st.markdown(highlighted_prompt, unsafe_allow_html=True)
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
-        st.session_state.page_history.append(prompt)
+        # st.session_state.page_history.append(prompt) #전체 프롬프트 저장
+        st.session_state.page_history.append(prompt_title)  # 전체 프롬프트 대신 제목 저장
+
         
         # sorted_scores = sorted(contribution_scores.items(), key=lambda x: x[1], reverse=True) #scores 딕셔너리
         # top_10 = sorted_scores[:10]
@@ -207,8 +232,8 @@ with col3:
         last_prompt = st.session_state.page_history[-1]
         alternative_prompt = suggest_alternative_prompt(last_prompt)
 
-        st.write("입력된 프롬프트:")
-        st.info(last_prompt)
+        # st.write("입력된 프롬프트:")
+        # st.info(last_prompt) #입력된 프롬프트 필요한가??
 
         st.write("추천된 프롬프트:")
         st.success(alternative_prompt)
@@ -238,8 +263,20 @@ with st.sidebar:
     # Page History 섹션
     st.title("Page History")
     if st.session_state.page_history:
-        for idx, history in enumerate(reversed(st.session_state.page_history[-10:]), 1):  # 최신 10개만 표시
-            st.write(f"{idx}. {history}")
+        selected_history = st.selectbox(
+            "list",
+            options=reversed(st.session_state.page_history[-10:]),  # 최신 10개 프롬프트
+            index=0,
+            key="history_selectbox"
+        )
+        
+        # 선택된 프롬프트를 다시 사용할 수 있는 버튼 추가
+        if st.button("이 프롬프트 다시 사용하기"):
+            # 채팅 입력창에 선택된 프롬프트를 자동으로 입력
+            st.session_state.reuse_prompt = selected_history #코드 수정 필요
+            st.rerun()
+    # else:
+    #     st.write("아직 입력된 프롬프트가 없습니다.")
 
     # 시스템 프롬프트 섹션
     # st.markdown('<div class="custom-sidebar">', unsafe_allow_html=True)

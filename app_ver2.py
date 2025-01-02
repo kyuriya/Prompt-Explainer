@@ -198,8 +198,8 @@ with col3:
         last_prompt = st.session_state.page_history[-1]
         alternative_prompt = suggest_alternative_prompt(last_prompt)
 
-        st.write("입력된 프롬프트:")
-        st.info(last_prompt)
+        # st.write("입력된 프롬프트:")
+        # st.info(last_prompt)
 
         st.write("추천된 프롬프트:")
         st.success(alternative_prompt)
