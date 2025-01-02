@@ -91,28 +91,37 @@ with col2:
     if "page_history" not in st.session_state:
         st.session_state.page_history = []  # 사용자 프롬프트 기록 초기화
 
-
-    if st.session_state.button_pressed is None:
-        cols = st.columns(3)
-        for idx, button in enumerate(button_data):
-            col = cols[idx % 3]  # 3열 반복
-            with col:
-                if st.button(button["text"], key=f"button_{idx}"):
-                    st.session_state.button_pressed = button["text"]
-                    st.session_state.system_prompt = button["system_prompt"]
-                    st.rerun()
-
-    else:
-        col = st.columns(1)[0]  # 중앙 정렬을 위해 1열 사용
+#알고리즘 버튼 위치 조정
+algorithm_style = """
+<style>
+    .button-style {
+        margin-top: 35%; /* 프롬프트 입력 창 위로 이동 */
+    }
+</style>
+"""
+st.markdown(algorithm_style, unsafe_allow_html=True)
+st.markdown('<div class="button-style">', unsafe_allow_html=True)
+if st.session_state.button_pressed is None:
+    cols = st.columns(3)
+    for idx, button in enumerate(button_data):
+        col = cols[idx % 3]  # 3열 반복
         with col:
-            if st.button(st.session_state.button_pressed, key="selected_button"):
-                st.session_state.button_pressed = None  # 상태 초기화
-                st.session_state.system_prompt = None
+            if st.button(button["text"], key=f"button_{idx}"):
+                st.session_state.button_pressed = button["text"]
+                st.session_state.system_prompt = button["system_prompt"]
+                st.rerun()
 
-        if st.button("다시 선택"):
+else:
+    col = st.columns(1)[0]  # 중앙 정렬을 위해 1열 사용
+    with col:
+        if st.button(st.session_state.button_pressed, key="selected_button"):
             st.session_state.button_pressed = None  # 상태 초기화
             st.session_state.system_prompt = None
-            st.rerun()
+
+    if st.button("다시 선택"):
+        st.session_state.button_pressed = None  # 상태 초기화
+        st.session_state.system_prompt = None
+        st.rerun()
 
     
 if prompt := (st.chat_input("프롬프트를 입력하세요.")):
@@ -210,7 +219,6 @@ with col3:
 
 
 # 왼쪽 사이드바 - Page History & 시스템 프롬프트
-
 # 왼쪽 사이드바 스타일 적용
 sidebar_style = """
     <style>
