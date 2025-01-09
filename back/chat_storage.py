@@ -1,7 +1,7 @@
 import json
 import os
 
-CHAT_HISTORY_FILE = "../chat_history.json"
+CHAT_HISTORY_FILE = "back/chat_history.json"
 
 def initialize_chat_storage():
     """대화 기록 JSON 파일 초기화"""

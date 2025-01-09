@@ -24,15 +24,17 @@ ALGORITHM_PROMPTS = {
             - 입력 그래프가 비어 있는 경우, 빈 리스트를 반환합니다.
             - 재귀와 스택을 활용한 두 가지 구현 방식 중 하나를 선택할 수 있습니다.
             """,
-    "BFS": "너비 우선 탐색(BFS) 관련 시스템 프롬프트",
-    "Sort": "정렬 알고리즘 관련 시스템 프롬프트",
-    "Greedy": "그리디 알고리즘 관련 시스템 프롬프트",
-    "Binary": "이진 탐색 관련 시스템 프롬프트",
-    "최단 경로": "최단 경로 알고리즘 관련 시스템 프롬프트"
+    "Breadth-First Search(BFS)": "너비 우선 탐색(BFS) 관련 시스템 프롬프트",
+    "Sort Algorithm": "정렬 알고리즘 관련 시스템 프롬프트",
+    "Greedy Algorithm": "그리디 알고리즘 관련 시스템 프롬프트",
+    "Dynamic Programming(DP)": "DP 관련 시스템 프롬프트",
+    "최단 경로 알고리즘": "최단 경로 알고리즘 관련 시스템 프롬프트"
 }
 
 def render_main_page():
     """중앙 메인 페이지 구현"""
+    st.header(f"Conversation {st.session_state['current_page']}")
+
     # 안내문구 표시 (처음 한 번만)
     # if not st.session_state.greetings:
     #     with st.chat_message("assistant"):
@@ -40,28 +42,49 @@ def render_main_page():
     #         st.markdown(intro)
     #         st.session_state.messages.append({"role": "assistant", "content": intro})  # 대화 기록에 추가
     #     st.session_state.greetings = True  # 상태 업데이트
-    st.title(f"Conversation {st.session_state['current_page']}")
 
-    
+    # 상태 관리: 버튼이 눌리지 않았을 때
+    if "button_pressed" not in st.session_state:
+        st.session_state.button_pressed = None
+        st.session_state.system_prompt = None
 
-    # 알고리즘 버튼
-    st.subheader("Choose an Algorithm")
-    cols = st.columns(3)  # 3열 레이아웃
-    for idx, (algo, prompt) in enumerate(ALGORITHM_PROMPTS.items()):
-        with cols[idx % 3]:
-            if st.button(algo):
-                st.session_state["current_prompt"] = prompt  # 선택된 프롬프트 저장
-                st.rerun()
+    # 버튼이 눌리지 않았을 때 알고리즘 버튼 출력
+    if st.session_state.button_pressed is None:
+        # st.subheader("Choose an Algorithm")
+        cols = st.columns(3)  # 3열 레이아웃
+        for idx, (algo, prompt) in enumerate(ALGORITHM_PROMPTS.items()):
+            with cols[idx % 3]:
+                if st.button(algo):
+                    st.session_state.button_pressed = algo  # 선택된 버튼을 상태로 저장
+                    st.session_state.system_prompt = prompt  # 해당 시스템 프롬프트 저장
+                    st.rerun()  # 페이지를 리프레시하여 새로운 버튼 상태 반영
 
+    # 버튼이 눌린 후 선택된 알고리즘의 프롬프트 표시
+    else:
+        st.sidebar.title("System Prompt")
+        st.sidebar.info(st.session_state.system_prompt)  # 사이드바에 시스템 프롬프트 표시
+
+        # 선택된 알고리즘의 상태에서 "다시 선택" 버튼을 만들어 상태 초기화
+        col = st.columns(1)[0]  # 중앙 정렬을 위해 1열 사용
+        with col:
+            if st.button(st.session_state.button_pressed, key="selected_button"):
+                st.session_state.button_pressed = None  # 상태 초기화
+                st.session_state.system_prompt = None
+
+        # "다시 선택" 버튼을 눌러 선택을 초기화하는 기능
+        if st.button("다시 선택"):
+            st.session_state.button_pressed = None  # 상태 초기화
+            st.session_state.system_prompt = None
+            st.rerun()  # 리프레시하여 다시 처음 상태로 돌아가기
     # 대화 메시지 출력
-    st.subheader("Conversation")
+    # st.subheader("Conversation")
     for message in st.session_state["messages"]:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # 프롬프트 입력 창
-    user_input = st.text_input("Your prompt:", key="user_input")
-    if st.button("Submit"):
+    # 프롬프트 입력 창 (st.chat_input() 사용)
+    user_input = st.chat_input("Your prompt:")
+    if user_input:  # 사용자가 입력을 하면
         if user_input.strip():
             # LLM 응답 생성
             response = get_huggingface_response(st.session_state["model"], user_input)
@@ -84,3 +107,4 @@ def render_main_page():
 
             # UI 업데이트
             st.rerun()
+    
