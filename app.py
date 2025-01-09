@@ -1,224 +1,42 @@
 import streamlit as st
-import time
-import sys
-import os
+from frontend.layout import render_layout
+from frontend.sidebar import render_sidebar
+from frontend.main_page import render_main_page
+from frontend.right_sidebar import render_right_sidebar
+from backend.chat_storage import initialize_chat_storage, load_chat_history
+from backend.llm_service import initialize_model
 
-# Page Config
-st.set_page_config(page_title=" 이름 뭘로 하지", page_icon="👩‍💻")
+# Streamlit 페이지 설정
+st.set_page_config(page_title="Algorithm Chat", layout="wide", page_icon="🤖")
 
-# Title
-st.title("이름 뭘로 하지")
+# 대화 기록 파일 초기화
+initialize_chat_storage()
 
-# Connection to Weaviate thorugh Connector
-#conn = st.connection(
-#   "weaviate",
-#    type=#데이터베이스,
-#    url=os.getenv("WEAVIATE_URL"),
-#    api_key=os.getenv("WEAVIATE_API_KEY"),
-#    additional_headers={"X-OpenAI-Api-Key": openai_key},
-#)
-
-
-#오른쪽 사이드바 구현을 위한 비율 정의
-# col2, col3 = st.columns([7, 5])
-# 전체 레이아웃 비율 정의: 왼쪽, 중앙, 오른쪽 사이에 여백 열 추가
-# spacer, col2, spacer2, col3 = st.columns([0.2, 4, 0.5, 4])  # 여백 비율 추가
-
-
-def display_chat_messages() -> None:
-    """Print message history
-    @returns None
-    """
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-def highlight_prompt_with_contributions(prompt, contribution_scores):
-    tokens = prompt.split()
-    highlighted_prompt = ""
-    for token in tokens:
-        contribution = contribution_scores.get(token, 0)  # 기여도가 없는 경우 기본값 0
-        color_intensity = int(contribution * 255)  # 기여도에 따른 색상 강도 (0~255)
-        highlighted_prompt += f'<span style="background-color: rgba(255, 0, 0, {contribution});">{token}</span> '
-    return f"<p>{highlighted_prompt}</p>"
-
-
-# Initialize chat history
+# 상태 변수 초기화
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = load_chat_history()
 if "messages" not in st.session_state:
-    st.session_state.messages = []
-    st.session_state.greetings = False
+    st.session_state["messages"] = []  # 현재 대화 기록
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = 1  # 기본 페이지 번호
+if "current_prompt" not in st.session_state:
+    st.session_state["current_prompt"] = None  # 기본 시스템 프롬프트 없음
+if "model" not in st.session_state:
+    st.session_state["model"] = initialize_model("gpt2")  # 모델 초기화
+if "greetings" not in st.session_state:
+    st.session_state["greetings"] = False  # 초기 상태는 False로 설정
 
-# Display chat messages from history on app rerun
-display_chat_messages()
+# 레이아웃 정의: 중앙(8), 오른쪽(3) 비율
+col2, col3 = render_layout()
 
+# 왼쪽 사이드바
+render_sidebar()
 
-# Greet user
-if not st.session_state.greetings:
-    with st.chat_message("assistant"):
-        intro = "안내문구"
-        st.markdown(intro)
-        # Add assistant response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": intro})
-        st.session_state.greetings = True
+# 중앙 메인 페이지
+with col2:
+    st.title("이름 뭘로 하지")
+    render_main_page()
 
-button_pressed = ""
-system_prompt = ""
-
-# 버튼 데이터
-button_data = [
-    # {"text": "Depth-First Search(DFS)", "system_prompt": "DFS 시스템 프롬프트"},
-    # 시스템 프롬프트 예시
-    {"text": "Depth-First Search(DFS)", 
-     "system_prompt": """
-        당신은 알고리즘 구현 전문가입니다. 사용자는 깊이 우선 탐색(DFS, Depth-First Search) 알고리즘을 구현하고자 합니다. 다음 규칙을 따르세요:
-
-        1. DFS 알고리즘은 Python으로 작성합니다.
-        2. DFS 알고리즘은 인접 리스트를 사용한 그래프 표현을 기반으로 동작합니다.
-        3. 주어진 시작 노드에서 탐색을 시작하며, 방문한 노드를 순서대로 반환하는 함수를 작성하세요.
-        4. 함수 이름은 `dfs_traversal`로 하고, 다음과 같은 매개변수를 받습니다:
-        - `graph`: 인접 리스트 형태의 그래프 (딕셔너리)
-        - `start`: 탐색을 시작할 노드
-        5. 함수는 방문 순서대로 노드가 저장된 리스트를 반환해야 합니다.
-        6. 입력 그래프는 연결 그래프 또는 비연결 그래프일 수 있습니다.
-        7. 코드의 주요 단계에 대해 간단한 주석을 추가합니다.
-
-        추가적으로, 다음 사항을 고려하세요:
-        - 방문된 노드는 중복으로 처리되지 않도록 관리합니다.
-        - 입력 그래프가 비어 있는 경우, 빈 리스트를 반환합니다.
-        - 재귀와 스택을 활용한 두 가지 구현 방식 중 하나를 선택할 수 있습니다.
-        """},
-    {"text": "Breadth-First Search(BFS)", "system_prompt": "BFS 시스템 프롬프트"},
-    {"text": "Dynamic Programming(DP)", "system_prompt": "DP 시스템 프롬프트"},
-    {"text": "Sort Algorithm", "system_prompt": "Sort 시스템 프롬프트"},
-    {"text": "Greedy Algorithm", "system_prompt": "Greedy 시스템 프롬프트"},
-    {"text": "최단 경로 알고리즘", "system_prompt": "최단경로 시스템 프롬프트"},
-]
-
-if "button_pressed" not in st.session_state:
-    st.session_state.button_pressed = None
-    st.session_state.system_prompt = None
-
-#사용자 프롬프트에 대한 페이지 기록
-if "page_history" not in st.session_state:
-    st.session_state.page_history = []  # 사용자 프롬프트 기록 초기화
-
-
-if st.session_state.button_pressed is None:
-    cols = st.columns(3)
-    for idx, button in enumerate(button_data):
-        col = cols[idx % 3]  # 3열 반복
-        with col:
-            if st.button(button["text"], key=f"button_{idx}"):
-                st.session_state.button_pressed = button["text"]
-                st.session_state.system_prompt = button["system_prompt"]
-                st.rerun()
-
-else:
-    col = st.columns(1)[0]  # 중앙 정렬을 위해 1열 사용
-    with col:
-        if st.button(st.session_state.button_pressed, key="selected_button"):
-            st.session_state.button_pressed = None  # 상태 초기화
-            st.session_state.system_prompt = None
-
-    if st.button("다시 선택"):
-        st.session_state.button_pressed = None  # 상태 초기화
-        st.session_state.system_prompt = None
-        st.rerun()
-
-
-if prompt := (st.chat_input("프롬프트를 입력하세요.")):
-    prompt = prompt.replace('"', "").replace("'", "")
-
-    if prompt != "":
-        query = prompt.strip()
-        #llm_response = API
-        #contribution_scores = 기여도 계산 점수
-
-        highlighted_prompt = highlight_prompt_with_contributions(prompt, contribution_scores)
-
-        # Display user message in chat message container
-        with st.chat_message("user"):
-            st.markdown(highlighted_prompt, unsafe_allow_html=True)
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-        sorted_scores = sorted(contribution_scores.items(), key=lambda x: x[1], reverse=True) #scores 딕셔너리
-        top_10 = sorted_scores[:10]
-        bottom_10 = sorted_scores[-10:]
-
-        with st.chat_message("assistant"): #LLM 응답 출력
-            st.markdown(f"LLM Response: {llm_response}")
-            st.session_state.messages.append({"role": "assistant", "content": llm_response})
-            st.markdown('<hr style="border: 1px solid #ccc;">', unsafe_allow_html=True) #중앙 구분선
-
-            cols = st.columns(len(top_10))
-            for idx, (word, score) in enumerate(top_10):
-                with cols[idx]:
-                    st.markdown(
-                        f'<button title="기여도: {score:.2f}" style="background-color: rgba(255, 0, 0, {score}); '
-                        'border: none; border-radius: 8px; padding: 8px; color: white; font-weight: bold; cursor: pointer;">'
-                        f'{word}</button>',
-                        unsafe_allow_html=True,
-                    )
-
-            cols = st.columns(len(bottom_10))
-            for idx, (word, score) in enumerate(bottom_10):
-                with cols[idx]:
-                    st.markdown(
-                        f'<button title="기여도: {score:.2f}" style="background-color: rgba(0, 0, 255, {score}); '
-                        'border: none; border-radius: 8px; padding: 8px; color: white; font-weight: bold; cursor: pointer;">'
-                        f'{word}</button>',
-                        unsafe_allow_html=True,
-                    )
-            
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": {
-                    "llm_response": llm_response,
-                    "highlighted_prompt": highlighted_prompt,
-                    "top_10": top_10,
-                    "bottom_10": bottom_10,
-                },
-            })
-
-            st.rerun()
-
-#사이드바 추가 
-# 왼쪽의 사이드바 - 페이지 기록 & 시스템 프롬프트 출력
-# 왼쪽 사이드바 스타일 적용
-sidebar_style = """
-    <style>
-        .custom-sidebar {
-            margin-top: 50%; /* 화면의 중간쯤으로 이동 */
-        }
-        .custom-box {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-    </style>
-"""
-st.markdown(sidebar_style, unsafe_allow_html=True)
-
-with st.sidebar:
-    # Page History 섹션
-    st.header("Page History")
-    if st.session_state.page_history:
-        for idx, history in enumerate(reversed(st.session_state.page_history[-10:]), 1):  # 최신 10개만 표시
-            st.write(f"{idx}. {history}")
-
-    # 시스템 프롬프트 섹션
-    st.markdown('<div class="custom-sidebar">', unsafe_allow_html=True)
-    st.header("시스템 프롬프트")
-    system_prompt_content = st.session_state.system_prompt
-    st.markdown(
-        f"""
-        <div class="custom-box">
-            {system_prompt_content}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
-# 오른쪽 사이드바 - 대체 단어 추천
+# 오른쪽 사이드바
+with col3:
+    render_right_sidebar()
