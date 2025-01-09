@@ -1,6 +1,6 @@
 import streamlit as st
-from backend.llm_service import get_huggingface_response
-from backend.chat_storage import save_chat_history
+from back.llm_service import get_huggingface_response
+from back.chat_storage import save_chat_history
 
 # 알고리즘별 시스템 프롬프트
 ALGORITHM_PROMPTS = {

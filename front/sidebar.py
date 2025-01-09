@@ -1,5 +1,5 @@
 import streamlit as st
-from backend.chat_storage import save_chat_history, load_chat_history
+from back.chat_storage import save_chat_history, load_chat_history
 
 def render_sidebar():
     """왼쪽 사이드바 구현"""

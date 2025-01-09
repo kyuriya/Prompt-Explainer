@@ -1,10 +1,10 @@
 import streamlit as st
-from frontend.layout import render_layout
-from frontend.sidebar import render_sidebar
-from frontend.main_page import render_main_page
-from frontend.right_sidebar import render_right_sidebar
-from backend.chat_storage import initialize_chat_storage, load_chat_history
-from backend.llm_service import initialize_model
+from front.layout import render_layout
+from front.sidebar import render_sidebar
+from front.main_page import render_main_page
+from front.right_sidebar import render_right_sidebar
+from back.chat_storage import initialize_chat_storage, load_chat_history
+from back.llm_service import initialize_model
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="Algorithm Chat", layout="wide", page_icon="🤖")
