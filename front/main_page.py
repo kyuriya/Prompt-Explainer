@@ -1,6 +1,8 @@
 import streamlit as st
 from back.llm_service import get_huggingface_response
 from back.chat_storage import save_chat_history
+# from back.explainability import compute_lime_values
+# from front.visualization import display_lime_visualization
 
 # 알고리즘별 시스템 프롬프트
 ALGORITHM_PROMPTS = {
@@ -88,10 +90,14 @@ def render_main_page():
         if user_input.strip():
             # LLM 응답 생성
             response = get_huggingface_response(st.session_state["model"], user_input)
-
+            
             # 메시지 기록 추가
             st.session_state.messages.append({"role": "user", "content": user_input})
             st.session_state.messages.append({"role": "assistant", "content": response})
+
+            # prompt 기여도 계산
+            
+            # 기여도 시각화
 
             # 대화 기록 저장
             chat_history = st.session_state["chat_history"]
