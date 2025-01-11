@@ -120,28 +120,33 @@ def render_main_page():
     st.header(f"Conversation {st.session_state['current_page']}")
 
     # 안내문구 표시 (처음 한 번만)
-    if not st.session_state.greetings:
+    if not st.session_state.get("greetings", False):
         with st.chat_message("assistant"):
             intro = "안녕하세요! 알고리즘 대화 인터페이스에 오신 것을 환영합니다. 아래 버튼을 눌러 원하는 알고리즘의 시스템 프롬프트를 선택하세요!"
-            st.markdown(intro)
+            st.markdown(intro)  # 사용자에게 보이는 안내문구
             st.session_state.messages.append({"role": "assistant", "content": intro})  # 대화 기록에 추가
-        st.session_state.greetings = True  # 상태 업데이트
+        st.session_state.greetings = True  # 안내문구가 한 번만 표시되도록 상태 업데이트
+        st.rerun()
 
     # 상태 관리: 버튼이 눌리지 않았을 때
     if "button_pressed" not in st.session_state:
         st.session_state.button_pressed = None
         st.session_state.system_prompt = None
 
+    # 대화 메시지 출력
+    for message in st.session_state["messages"]:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
     # 버튼이 눌리지 않았을 때 알고리즘 버튼 출력
     if st.session_state.button_pressed is None:
-        # st.subheader("Choose an Algorithm")
         cols = st.columns(3)  # 3열 레이아웃
         for idx, (algo, prompt) in enumerate(ALGORITHM_PROMPTS.items()):
             with cols[idx % 3]:
                 if st.button(algo):
-                    st.session_state.button_pressed = algo  # 선택된 버튼을 상태로 저장
-                    st.session_state.system_prompt = prompt  # 해당 시스템 프롬프트 저장
-                    st.rerun()  # 페이지를 리프레시하여 새로운 버튼 상태 반영
+                    st.session_state.button_pressed = algo
+                    st.session_state.system_prompt = prompt
+                    st.rerun()
 
     # 버튼이 눌린 후 선택된 알고리즘의 프롬프트 표시
     else:
@@ -160,11 +165,6 @@ def render_main_page():
             st.session_state.button_pressed = None  # 상태 초기화
             st.session_state.system_prompt = None
             st.rerun()  # 리프레시하여 다시 처음 상태로 돌아가기
-    # 대화 메시지 출력
-    # st.subheader("Conversation")
-    for message in st.session_state["messages"]:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
 
     # 프롬프트 입력 창 (st.chat_input() 사용)
     user_input = st.chat_input("Your prompt:")

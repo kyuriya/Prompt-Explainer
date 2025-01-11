@@ -26,4 +26,24 @@ def render_sidebar():
     if "current_prompt" in st.session_state and st.session_state["current_prompt"]:
         # st.sidebar.subheader("System Prompt")
         st.sidebar.title("System Prompt")
-        st.sidebar.info(st.session_state["current_prompt"])
+        # st.sidebar.info(st.session_state["current_prompt"])
+        sidebar_style = """
+            <style>
+                .custom-box {
+                    background-color: #f8f9fa;
+                    padding: 10px;
+                    border-radius: 8px;
+                    border: 1px solid #ddd;
+                }
+            </style>
+        """
+        st.markdown(sidebar_style, unsafe_allow_html=True)
+        st.markdown(
+        f"""
+        <div class="custom-box">
+            {st.session_state["current_prompt"]}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+        st.markdown('</div>', unsafe_allow_html=True)
