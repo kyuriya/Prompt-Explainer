@@ -7,7 +7,7 @@ from back.chat_storage import initialize_chat_storage, load_chat_history
 from back.llm_service import initialize_model
 
 # Streamlit 페이지 설정
-st.set_page_config(page_title="Algorithm Chat", layout="wide", page_icon="🤖")
+st.set_page_config(page_title="Prompt Explainer", layout="wide", page_icon="🧑‍💼")
 
 # 대화 기록 파일 초기화
 initialize_chat_storage()
@@ -34,7 +34,7 @@ render_sidebar()
 
 # 중앙 메인 페이지
 with col2:
-    st.title("이름 뭘로 하지")
+    st.title("Prompt Explainer")
     render_main_page()
 
 # 오른쪽 사이드바

@@ -120,12 +120,12 @@ def render_main_page():
     st.header(f"Conversation {st.session_state['current_page']}")
 
     # 안내문구 표시 (처음 한 번만)
-    # if not st.session_state.greetings:
-    #     with st.chat_message("assistant"):
-    #         intro = "안녕하세요! 알고리즘 대화 인터페이스에 오신 것을 환영합니다. 아래 버튼을 눌러 원하는 알고리즘의 시스템 프롬프트를 선택하세요!"
-    #         st.markdown(intro)
-    #         st.session_state.messages.append({"role": "assistant", "content": intro})  # 대화 기록에 추가
-    #     st.session_state.greetings = True  # 상태 업데이트
+    if not st.session_state.greetings:
+        with st.chat_message("assistant"):
+            intro = "안녕하세요! 알고리즘 대화 인터페이스에 오신 것을 환영합니다. 아래 버튼을 눌러 원하는 알고리즘의 시스템 프롬프트를 선택하세요!"
+            st.markdown(intro)
+            st.session_state.messages.append({"role": "assistant", "content": intro})  # 대화 기록에 추가
+        st.session_state.greetings = True  # 상태 업데이트
 
     # 상태 관리: 버튼이 눌리지 않았을 때
     if "button_pressed" not in st.session_state:
