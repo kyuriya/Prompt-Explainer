@@ -6,6 +6,8 @@ from io import BytesIO
 from PIL import Image
 import torch
 import gc
+from datetime import datetime
+import os
 # 알고리즘별 시스템 프롬프트
 ALGORITHM_PROMPTS = {
     "Depth-First Search(DFS)": """
@@ -177,33 +179,48 @@ def render_main_page():
     user_input = st.chat_input("Your prompt:")
     if user_input:  # 사용자가 입력을 하면
         if user_input.strip():
-            # LLM 응답 생성
-            response = get_huggingface_response(st.session_state["model"], user_input)
-            
-            # 메시지 기록 추가
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            st.session_state.messages.append({"role": "assistant", "content": response})
+            try:
+                # LLM 응답 생성
+                response = get_huggingface_response(st.session_state["model"], user_input)
+                
+                if response:  # response가 None이 아닐 때만 처리
+                    # 메시지 기록 추가
+                    st.session_state.messages.append({"role": "user", "content": user_input})
+                    st.session_state.messages.append({"role": "assistant", "content": response})
 
-            # prompt 기여도 계산
-            heatmap_image = generate_heatmap(st.session_state["model"], user_input, response)
+                    # prompt 기여도 계산
+                    heatmap_buffer = generate_heatmap(st.session_state["model"], user_input, response)
 
-            # 기여도 시각화
+                    if heatmap_buffer:
+                        # BytesIO를 이미지로 변환
+                        from PIL import Image
+                        heatmap_image = Image.open(heatmap_buffer)
+                        
+                        # 이미지를 파일로 저장 (선택사항)
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        save_path = f"heatmaps/heatmap_{timestamp}.png"
+                        os.makedirs("heatmaps", exist_ok=True)
+                        heatmap_image.save(save_path)
+                        
+                        # Streamlit에 이미지 표시
+                        st.markdown("### Prompt Attribution Heatmap")
+                        st.image(heatmap_buffer, use_column_width=True)
 
-            # 대화 기록 저장
-            chat_history = st.session_state["chat_history"]
-            current_page = st.session_state["current_page"] - 1
+                    # 대화 기록 저장
+                    chat_history = st.session_state["chat_history"]
+                    current_page = st.session_state["current_page"] - 1
 
-            # 기존 페이지 업데이트
-            if current_page < len(chat_history):
-                chat_history[current_page] = {"messages": st.session_state["messages"]}
-            else:
-                chat_history.append({"messages": st.session_state["messages"]})
+                    # 기존 페이지 업데이트
+                    if current_page < len(chat_history):
+                        chat_history[current_page] = {"messages": st.session_state["messages"]}
+                    else:
+                        chat_history.append({"messages": st.session_state["messages"]})
 
-            save_chat_history(chat_history)
+                    save_chat_history(chat_history)
 
-            # UI 업데이트
-            st.rerun()
-        # 히트맵 이미지 표시
-        if "heatmap_image" in locals() and heatmap_image:
-            st.markdown("### Prompt Attribution Heatmap")
-            st.image(heatmap_image, use_column_width=True)
+                    # UI 업데이트
+                    st.rerun()
+
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
+        
