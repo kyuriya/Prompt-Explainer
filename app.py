@@ -5,12 +5,14 @@ from front.main_page import render_main_page
 from front.right_sidebar import render_right_sidebar
 from back.chat_storage import initialize_chat_storage, load_chat_history
 from back.llm_service import initialize_model
-
+import torch
+import gc
 # Streamlit 페이지 설정
 st.set_page_config(page_title="Prompt Explainer", layout="wide", page_icon="🧑‍💼")
 
 # 대화 기록 파일 초기화
 initialize_chat_storage()
+
 
 # 상태 변수 초기화
 if "chat_history" not in st.session_state:
@@ -28,6 +30,12 @@ if "model" not in st.session_state:
 if "greetings" not in st.session_state:
     st.session_state["greetings"] = False  # 초기 상태는 False로 설정
 
+# GPU 메모리 및 캐시 초기화 함수
+def clear_gpu_cache():
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        gc.collect()
+
 # 레이아웃 정의: 중앙(8), 오른쪽(3) 비율
 col2, col3 = render_layout()
 
@@ -37,7 +45,10 @@ render_sidebar()
 # 중앙 메인 페이지
 with col2:
     st.title("Prompt Explainer")
+    clear_gpu_cache()  # 매번 렌더링 시 GPU 캐시 초기화
+
     render_main_page()
+    
 
 # 오른쪽 사이드바
 with col3:

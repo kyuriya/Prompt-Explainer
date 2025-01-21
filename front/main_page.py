@@ -1,9 +1,11 @@
 import streamlit as st
 from back.llm_service import get_huggingface_response
 from back.chat_storage import save_chat_history
-# from back.explainability import compute_lime_values
-# from front.visualization import display_lime_visualization
-
+from back.captum_utils import generate_heatmap  # Utility for Captum heatmap
+from io import BytesIO
+from PIL import Image
+import torch
+import gc
 # 알고리즘별 시스템 프롬프트
 ALGORITHM_PROMPTS = {
     "Depth-First Search(DFS)": """
@@ -108,8 +110,13 @@ ALGORITHM_PROMPTS = {
                 •	Optimize the time complexity of the implemented algorithm.
             """
 }
-
+# GPU 메모리 및 캐시 초기화 함수
+def clear_gpu_cache():
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        gc.collect()
 def render_main_page():
+    clear_gpu_cache()
     """중앙 메인 페이지 구현"""
     st.header(f"Conversation {st.session_state['current_page']}")
 
@@ -178,7 +185,8 @@ def render_main_page():
             st.session_state.messages.append({"role": "assistant", "content": response})
 
             # prompt 기여도 계산
-            
+            heatmap_image = generate_heatmap(st.session_state["model"], user_input, response)
+
             # 기여도 시각화
 
             # 대화 기록 저장
@@ -195,4 +203,7 @@ def render_main_page():
 
             # UI 업데이트
             st.rerun()
-    
+        # 히트맵 이미지 표시
+        if "heatmap_image" in locals() and heatmap_image:
+            st.markdown("### Prompt Attribution Heatmap")
+            st.image(heatmap_image, use_column_width=True)
