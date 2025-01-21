@@ -69,7 +69,7 @@ ALGORITHM_PROMPTS = {
             The user wants to implement a Greedy Algorithm.
             Follow these rules:
                 1.	Write the Greedy Algorithm in Python.
-                2.	Solve a specific problem type (e.g., Activity Selection Problem, Minimum Spanning Tree, Coin Change Problem) based on the user’s requirements.
+                2.	Solve a specific problem type (e.g., Activity Selection Problem, Minimum Spanning Tree, Coin Change Problem) based on the user's requirements.
                 3.	The implemented function should include:
                 •	The function name and parameters, defined dynamically based on the problem type.
                 •	A clear explanation of the greedy criterion used for selection (e.g., maximum, minimum, etc.).
@@ -84,7 +84,7 @@ ALGORITHM_PROMPTS = {
             The user wants to solve a problem using Dynamic Programming (DP).
             Follow these rules:
                 1.	Write the Dynamic Programming solution in Python.
-                2.	Solve a specific problem type (e.g., Fibonacci sequence, Knapsack problem, Shortest Path, etc.) based on the user’s requirements.
+                2.	Solve a specific problem type (e.g., Fibonacci sequence, Knapsack problem, Shortest Path, etc.) based on the user's requirements.
                 3.	The implemented function should include:
                 •	A function name and parameters defined dynamically based on the problem type.
                 •	Use either the memoization or tabulation approach for the DP solution.
@@ -132,9 +132,9 @@ def render_main_page():
             When you input a prompt, we will visualize the emphasized sections based on **SHAP values**. This allows you to learn better **prompt-writing strategies** and **maximize the utility of LLMs** in your workflow. 🎞️\n 
             Give it a try and enhance your experience in solving algorithmic problems! 🎸
             """
-            st.markdown(intro)  # 사용자에게 보이는 안내문구
-            st.session_state.messages.append({"role": "assistant", "content": intro})  # 대화 기록에 추가
-        st.session_state.greetings = True  # 안내문구가 한 번만 표시되도록 상태 업데이트
+            st.markdown(intro)
+            st.session_state.messages.append({"role": "assistant", "content": intro})
+        st.session_state.greetings = True
         st.rerun()
 
     # 상태 관리: 버튼이 눌리지 않았을 때
@@ -146,10 +146,20 @@ def render_main_page():
     for message in st.session_state["messages"]:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+            # # assistant 메시지인 경우에만 토글과 히트맵 표시
+            # if message["role"] == "assistant":
+            #     with st.expander("Show Attribution Heatmap"):
+            #         if "heatmap_path" in message and os.path.exists(message["heatmap_path"]):
+            #             st.image(message["heatmap_path"], use_column_width=True)
+
+    # 알고리즘 버튼 출력
+    if "button_pressed" not in st.session_state:
+        st.session_state.button_pressed = None
+        st.session_state.system_prompt = None
 
     # 버튼이 눌리지 않았을 때 알고리즘 버튼 출력
     if st.session_state.button_pressed is None:
-        cols = st.columns(3)  # 3열 레이아웃
+        cols = st.columns(3)
         for idx, (algo, prompt) in enumerate(ALGORITHM_PROMPTS.items()):
             with cols[idx % 3]:
                 if st.button(algo):
@@ -202,9 +212,20 @@ def render_main_page():
                         os.makedirs("heatmaps", exist_ok=True)
                         heatmap_image.save(save_path)
                         
-                        # Streamlit에 이미지 표시
-                        st.markdown("### Prompt Attribution Heatmap")
-                        st.image(heatmap_buffer, use_column_width=True)
+                    # Streamlit에 이미지 표시
+                    st.markdown("### Prompt Attribution Heatmap")
+                    st.image(heatmap_image, use_column_width=True)
+                    
+                    # 히트맵 생성
+                    # with st.spinner('Generating attribution heatmap...'):
+                    #     heatmap_path = generate_heatmap(st.session_state["model"], user_input, response)
+                    
+                    # 응답과 히트맵 경로를 함께 저장
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": response,
+                        "heatmap_path": heatmap_path
+                    })
 
                     # 대화 기록 저장
                     chat_history = st.session_state["chat_history"]
