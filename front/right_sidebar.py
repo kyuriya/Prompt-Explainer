@@ -12,7 +12,7 @@ from streamlit_plotly_events import plotly_events
 from plotly.graph_objs import Scatter, Figure
 # from plotly.colors import DEFAULT_PLOTLY_COLORS
 from plotly.colors import qualitative
-from gensim.models import Word2Vec
+# from gensim.models import Word2Vec
 
 
 # 텍스트 임베딩 함수 (캐싱 적용)
@@ -36,6 +36,7 @@ def apply_umap(embeddings):
     umap_model = UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
     return umap_model.fit_transform(embeddings)
 
+
 def render_right_sidebar():
     # 카테고리별 단어 리스트
     categories = {
@@ -50,8 +51,32 @@ def render_right_sidebar():
             "Connection Search", "Visited Records", "Adjacent Node Search", "Queue Implementation", "Search Order", 
             "Queue-Based Search", "Graph Traversal", "Level-Wise Visit", "Adjacency List", "Graph Queue", 
             "Queue Search", "Breadth-First Search Implementation", "Queue Node", "Search Node", "Connection Structure"
+        ],
+        "Sort":[
+            "Sorting Algorithm", "Bubble Sort", "Selection Sort", "Insertion Sort", "Merge Sort", 
+            "Quick Sort", "Heap Sort", "Radix Sort", "Array Sorting", "List Sorting", 
+            "Sort Comparison", "Sort Structure", "Sort Order", "Data Sorting", "Sorting Speed", 
+            "Sorting Method", "Sorting Conditions", "Sorting Efficiency", "Sort Implementation", "Sorting Time Complexity"
+            
+        ],
+        "Greedy":[
+             "Greedy Selection", "Optimal Solution Construction", "Optimization Algorithm", "Greedy Strategy", "Greedy Search", 
+            "Greedy Solution Method", "Maximum Value Selection", "Cost Minimization", "Greedy Analysis", "Greedy Pattern", 
+            "Greedy Structure", "Greedy Step", "Greedy Operation", "Greedy Decision", "Greedy Optimization", 
+            "Greedy Implementation", "Greedy Approach", "Greedy Problem", "Greedy Efficiency", "Greedy Construction Method"
+        ],
+        "DP":[
+             "Dynamic Programming", "Subproblems", "Optimal Substructure", "Memoization", "Cache Utilization", 
+            "Recurrence Relation", "Optimal Structure", "DP Algorithm", "DP Implementation", "Top-Down", 
+            "Bottom-Up", "Eliminating Redundant Calculations", "Optimal Solution Structure", "DP Pattern", "Partial Optimization", 
+            "DP Efficiency", "DP Application", "DP Time Complexity", "DP Structure", "Optimization Partitioning"
+        ],
+        "Shortest Distance":[
+            "Shortest Distance", "Dijkstra", "Bellman-Ford", "Floyd-Warshall", "Path Search", 
+            "Graph Weights", "Minimum Path", "Shortest Path Search", "Distance Calculation", "Path Efficiency", 
+            "Shortest Path Implementation", "Graph Structure", "Minimum Cost", "Path Operation", "Shortest Path Analysis", 
+            "Optimal Path Search", "Graph Path", "Shortest Path Pattern", "Shortest Path Time", "Shortest Path Design"
         ]
-       
     }
 
     # 모든 단어와 카테고리 데이터프레임 생성
@@ -97,7 +122,7 @@ def render_right_sidebar():
             y=category_df['UMAP_2'],
             mode='markers',
             # marker=dict(size=8, color=category_colors[category]),
-            marker=dict(color=category_colors[category], size=10),
+            marker=dict(color=category_colors[category], size=8),
             # opacity=0.5,
             name=category,
             text=category_df['Word'],

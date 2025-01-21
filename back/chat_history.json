@@ -1,0 +1,18 @@
+[
+    {
+        "messages": [
+            {
+                "role": "assistant",
+                "content": "\uc548\ub155\ud558\uc138\uc694! \uc54c\uace0\ub9ac\uc998 \ub300\ud654 \uc778\ud130\ud398\uc774\uc2a4\uc5d0 \uc624\uc2e0 \uac83\uc744 \ud658\uc601\ud569\ub2c8\ub2e4. \uc544\ub798 \ubc84\ud2bc\uc744 \ub20c\ub7ec \uc6d0\ud558\ub294 \uc54c\uace0\ub9ac\uc998\uc758 \uc2dc\uc2a4\ud15c \ud504\ub86c\ud504\ud2b8\ub97c \uc120\ud0dd\ud558\uc138\uc694!"
+            },
+            {
+                "role": "user",
+                "content": "write a basic sort algorithm code with python"
+            },
+            {
+                "role": "assistant",
+                "content": "write a basic sort algorithm code with python\nSure! Below is an implementation of the **Bubble Sort** algorithm in Python. Bubble Sort works by repeatedly stepping through the list, comparing adjacent elements and swapping them if they are in the wrong order.\n\n```python\ndef bubble_sort(arr):\n    n = len(arr)\n    \n    # Traverse through all array elements\n    for i in range(n-1):\n        # Last i elements are already in place\n        for j in range(0, n-i-1):\n            # Swap if the element found is greater than the next element\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]\n\n# Example usage"
+            }
+        ]
+    }
+]
