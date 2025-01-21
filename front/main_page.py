@@ -116,7 +116,13 @@ def render_main_page():
     # 안내문구 표시 (처음 한 번만)
     if not st.session_state.get("greetings", False):
         with st.chat_message("assistant"):
-            intro = "안녕하세요! 알고리즘 대화 인터페이스에 오신 것을 환영합니다. 아래 버튼을 눌러 원하는 알고리즘의 시스템 프롬프트를 선택하세요!"
+            intro = """
+            Welcome to **Prompt Explainer**! 🤵🏻‍♀️\n
+            This tool is designed to help you leverage LLMs (Large Language Models) more effectively when **solving algorithm problems**. ⛳️\n
+            By visually highlighting which **parts of the prompt the LLM focuses on**, you can craft **better prompts** and receive **higher-quality response codes**. 🎲\n
+            When you input a prompt, we will visualize the emphasized sections based on **SHAP values**. This allows you to learn better **prompt-writing strategies** and **maximize the utility of LLMs** in your workflow. 🎞️\n 
+            Give it a try and enhance your experience in solving algorithmic problems! 🎸
+            """
             st.markdown(intro)  # 사용자에게 보이는 안내문구
             st.session_state.messages.append({"role": "assistant", "content": intro})  # 대화 기록에 추가
         st.session_state.greetings = True  # 안내문구가 한 번만 표시되도록 상태 업데이트
