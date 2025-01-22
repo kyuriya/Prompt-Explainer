@@ -33,7 +33,7 @@ def get_embeddings(words):
 # UMAP 차원 축소 함수 (캐싱 적용)
 @st.cache_data
 def apply_umap(embeddings):
-    umap_model = UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
+    umap_model = UMAP(n_neighbors=5, min_dist=0.3, metric='cosine', random_state=42)
     return umap_model.fit_transform(embeddings)
 
 
@@ -106,7 +106,7 @@ def render_right_sidebar():
     # 기본 색상 팔레트를 이용한 카테고리별 색상 매핑
     # category_colors = {cat: color for cat, color in zip(categories, DEFAULT_PLOTLY_COLORS)}
     # 카테고리별로 색상을 매핑 (Set1 팔레트 사용)
-    category_colors = {cat: color for cat, color in zip(categories, qualitative.Dark2)}
+    category_colors = {cat: color for cat, color in zip(categories, qualitative.D3)}
 
     # Plotly 시각화를 위한 데이터 생성
     fig = Figure()
