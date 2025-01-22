@@ -122,7 +122,7 @@ def render_right_sidebar():
             y=category_df['UMAP_2'],
             mode='markers',
             # marker=dict(size=8, color=category_colors[category]),
-            marker=dict(color=category_colors[category], size=8),
+            marker=dict(color=category_colors[category], size=7),
             # opacity=0.5,
             name=category,
             text=category_df['Word'],

@@ -8,6 +8,11 @@ import torch
 import gc
 from datetime import datetime
 import os
+import base64
+import json
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 # 알고리즘별 시스템 프롬프트
 ALGORITHM_PROMPTS = {
     "Depth-First Search(DFS)": """
@@ -146,11 +151,10 @@ def render_main_page():
     for message in st.session_state["messages"]:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-            # # assistant 메시지인 경우에만 토글과 히트맵 표시
-            # if message["role"] == "assistant":
-            #     with st.expander("Show Attribution Heatmap"):
-            #         if "heatmap_path" in message and os.path.exists(message["heatmap_path"]):
-            #             st.image(message["heatmap_path"], use_column_width=True)
+            if message["role"] == "assistant" and "heatmap" in message:
+                # base64 문자열을 이미지 데이터로 변환
+                image_bytes = base64.b64decode(message["heatmap"])
+                st.image(image_bytes)  # 바이트 데이터로 직접 전달
 
     # 알고리즘 버튼 출력
     if "button_pressed" not in st.session_state:
@@ -187,61 +191,199 @@ def render_main_page():
 
     # 프롬프트 입력 창 (st.chat_input() 사용)
     user_input = st.chat_input("Your prompt:")
-    if user_input:  # 사용자가 입력을 하면
+    # if user_input:  # 사용자가 입력을 하면
+    #     if user_input.strip():
+    #         try:
+    #             response = get_huggingface_response(st.session_state["model"], user_input)
+    #             if response:
+    #                 # 메시지 기록 추가
+    #                 st.session_state.messages.append({"role": "user", "content": user_input})
+    #                 st.session_state.messages.append({"role": "assistant", "content": response})
+                # 사용자 입력 메시지 즉시 표시
+                # st.session_state.messages.append({"role": "user", "content": user_input})
+                
+                # LLM 응답 생성
+                # response = get_huggingface_response(st.session_state["model"], user_input)
+                
+                # if response:
+                    # 응답 메시지 즉시 표시
+                    # st.session_state.messages.append({"role": "assistant", "content": response})
+                    
+                    # 히트맵 생성
+                    # with st.spinner('Generating attribution heatmap...'):
+                    #     heatmap_buffer = generate_heatmap(st.session_state["model"], user_input, response)
+                        
+                    #     if heatmap_buffer:
+                    #         # 히트맵 이미지 저장
+                    #         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    #         save_path = f"heatmaps/heatmap_{timestamp}.png"
+                    #         os.makedirs("heatmaps", exist_ok=True)
+                            
+                    #         # BytesIO를 이미지로 변환하고 저장
+                    #         heatmap_image = Image.open(heatmap_buffer)
+                    #         heatmap_image.save(save_path)
+                        
+            #         # 히트맵 표시
+            #         st.image(heatmap_image, caption="Prompt Attribution Heatmap", use_column_width=True)
+                    
+            #         # 대화 기록 저장
+            #         chat_history = st.session_state["chat_history"]
+            #         current_page = st.session_state["current_page"] - 1
+                    
+            #         if current_page < len(chat_history):
+            #             chat_history[current_page] = {"messages": st.session_state["messages"]}
+            #         else:
+            #             chat_history.append({"messages": st.session_state["messages"]})
+
+            #         save_chat_history(chat_history)
+                    
+            #         st.rerun()
+
+            # except Exception as e:
+            #     st.error(f"An error occurred: {str(e)}")
+        
+    # if user_input:  # 사용자가 프롬프트를 입력하면
+    #     # if user_input.strip():
+    #     if user_input is not None and user_input.strip():
+    #         try:
+    #             response_lines = get_huggingface_response(st.session_state["model"], user_input)
+    #             if response_lines:
+    #                 # 메시지 기록 추가
+    #                 st.session_state.messages.append({"role": "user", "content": user_input})
+    #                 st.session_state.messages.append({"role": "assistant", "content": "\n".join(response_lines)})
+
+    #                 # Captum 기여도 계산
+    #                 json_path = generate_heatmap(st.session_state["model"], user_input, response_lines)
+
+    #                 if json_path:
+    #                     # JSON 파일을 기반으로 히트맵 생성 및 표시
+    #                     st.markdown("### Prompt Attribution Heatmap")
+    #                     with open(json_path, "r") as json_file:
+    #                         attribution_data = json.load(json_file)
+    #                     # 각 줄의 히트맵 생성 (여기서 구현 필요)
+    #                     for idx, data in attribution_data.items():
+    #                         st.markdown(f"**{data['line']}**")
+    #                         # 히트맵 시각화 코드 삽입
+    #                         st.image(f"heatmaps/heatmap_{idx}.png", use_column_width=True)
+
+    #                 # save_chat_history(st.session_state["chat_history"])
+    #                 # st.rerun()
+    #             # 대화 기록 관리
+    #                 chat_history = st.session_state["chat_history"]
+    #                 current_page = st.session_state["current_page"] - 1
+
+    #                 if current_page < len(chat_history):
+    #                     # 기존 페이지 업데이트
+    #                     chat_history[current_page] = {"messages": st.session_state["messages"]}
+    #                 else:
+    #                     # 새로운 페이지 추가
+    #                     chat_history.append({"messages": st.session_state["messages"]})
+
+    #                 # 대화 기록 저장
+    #                 save_chat_history(chat_history)
+
+    #                 # UI 업데이트
+    #                 st.rerun()
+
+    #         except Exception as e:
+    #             st.error(f"An error occurred: {str(e)}")
+
+    # if user_input:  # 사용자가 프롬프트를 입력하면
+    #     # if user_input.strip():
+    #     if user_input is not None and user_input.strip():
+    #         try:
+    #             response_lines = get_huggingface_response(st.session_state["model"], user_input)
+    #             if response_lines:
+    #                 # 메시지 기록 추가
+    #                 st.session_state.messages.append({"role": "user", "content": user_input})
+    #                 # st.session_state.messages.append({"role": "assistant", "content": "\n".join(response_lines)})
+    #                 st.session_state.messages.append({"role": "assistant", "content": response_lines})
+
+    #                 # Captum 기여도 계산
+    #                 with st.spinner('Generating attribution heatmap...'):
+    #                     heatmap_buffer = generate_heatmap(st.session_state["model"], user_input, response_lines)
+                        
+    #                     if heatmap_buffer:
+    #                         # 임시 파일로 저장
+    #                         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    #                         temp_path = f"./heatmaps/heatmap_{timestamp}.png"
+    #                         os.makedirs("./heatmaps", exist_ok=True)
+                            
+    #                         with open(temp_path, "wb") as f:
+    #                             f.write(heatmap_buffer.getvalue())
+                            
+    #                         # 파일을 base64로 인코딩
+    #                         with open(temp_path, "rb") as f:
+    #                             heatmap_base64 = base64.b64encode(f.read()).decode()
+                            
+    #                         # 응답과 히트맵을 함께 메시지에 저장
+    #                         st.session_state.messages.append({
+    #                             "role": "assistant", 
+    #                             "content": response_lines,
+    #                             "heatmap": heatmap_base64
+    #                         })
+                            
+    #                         # 임시 파일 삭제
+    #                         os.remove(temp_path)
+
+    #                 # 히트맵 표시
+    #                 st.image(f"heatmaps/heatmap_{timestamp}.png", caption="Prompt Attribution Heatmap", use_column_width=True)
+
+    #                 # 대화 기록 관리
+    #                 chat_history = st.session_state["chat_history"]
+    #                 current_page = st.session_state["current_page"] - 1
+
+    #                 if current_page < len(chat_history):
+    #                     # 기존 페이지 업데이트
+    #                     chat_history[current_page] = {"messages": st.session_state["messages"]}
+    #                 else:
+    #                     # 새로운 페이지 추가
+    #                     chat_history.append({"messages": st.session_state["messages"]})
+
+    #                 # 대화 기록 저장
+    #                 save_chat_history(chat_history)
+
+    #                 # UI 업데이트
+    #                 st.rerun()
+
+    #         except Exception as e:
+    #             st.error(f"An error occurred: {str(e)}")
+    if user_input:
         if user_input.strip():
             try:
                 # LLM 응답 생성
                 response = get_huggingface_response(st.session_state["model"], user_input)
-                
-                if response:  # response가 None이 아닐 때만 처리
-                    # 메시지 기록 추가
-                    st.session_state.messages.append({"role": "user", "content": user_input})
-                    st.session_state.messages.append({"role": "assistant", "content": response})
-
-                    # prompt 기여도 계산
+                if response:
+                    # Captum 기여도 계산
                     heatmap_buffer = generate_heatmap(st.session_state["model"], user_input, response)
 
                     if heatmap_buffer:
-                        # BytesIO를 이미지로 변환
-                        from PIL import Image
-                        heatmap_image = Image.open(heatmap_buffer)
-                        
-                        # 이미지를 파일로 저장 (선택사항)
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        save_path = f"heatmaps/heatmap_{timestamp}.png"
-                        os.makedirs("heatmaps", exist_ok=True)
-                        heatmap_image.save(save_path)
-                        
-                    # Streamlit에 이미지 표시
-                    st.markdown("### Prompt Attribution Heatmap")
-                    st.image(heatmap_image, use_column_width=True)
-                    
-                    # 히트맵 생성
-                    # with st.spinner('Generating attribution heatmap...'):
-                    #     heatmap_path = generate_heatmap(st.session_state["model"], user_input, response)
-                    
-                    # 응답과 히트맵 경로를 함께 저장
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": response,
-                        "heatmap_path": heatmap_path
-                    })
+                        # Streamlit에 이미지 표시
+                        st.markdown("### Prompt Attribution Heatmap")
+                        st.image(heatmap_buffer, caption="Attribution Heatmap", use_column_width=True)
 
-                    # 대화 기록 저장
-                    chat_history = st.session_state["chat_history"]
-                    current_page = st.session_state["current_page"] - 1
+                        # 채팅 메시지 기록에 추가
+                        heatmap_base64 = base64.b64encode(heatmap_buffer.getvalue()).decode("utf-8")
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": response,
+                            "heatmap": heatmap_base64  # Base64 인코딩된 이미지 저장
+                        })
 
-                    # 기존 페이지 업데이트
-                    if current_page < len(chat_history):
-                        chat_history[current_page] = {"messages": st.session_state["messages"]}
-                    else:
-                        chat_history.append({"messages": st.session_state["messages"]})
+                        # 채팅 기록 업데이트
+                        chat_history = st.session_state["chat_history"]
+                        current_page = st.session_state["current_page"] - 1
 
-                    save_chat_history(chat_history)
+                        if current_page < len(chat_history):
+                            chat_history[current_page] = {"messages": st.session_state["messages"]}
+                        else:
+                            chat_history.append({"messages": st.session_state["messages"]})
 
-                    # UI 업데이트
-                    st.rerun()
+                        save_chat_history(chat_history)
+                        st.rerun()
+              
+      
+
 
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
-        

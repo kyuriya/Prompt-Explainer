@@ -1,79 +1,237 @@
 import torch
-from captum.attr import LLMAttribution, FeatureAblation, TextTokenInput
+from captum.attr import LLMAttribution, FeatureAblation, TextTokenInput, TextTemplateInput
 import matplotlib.pyplot as plt
 from io import BytesIO
 import warnings
+import os
+import json
+from datetime import datetime
+import numpy as np
+import seaborn as sns
 
 # Ignore warnings
 warnings.filterwarnings("ignore", ".*past_key_values.*")
 warnings.filterwarnings("ignore", ".*Skipping this token.*")
 
+# def generate_heatmap(model_and_tokenizer, prompt, response, cmap="RdBu"):
+#     """
+#     Generate heatmap using LLMAttribution for prompt attribution.
+#     Args:
+#         model_and_tokenizer: Tuple of (model, tokenizer)
+#         prompt: Input prompt text
+#         response: Target response text
+#         cmap: Optional colormap for visualization (e.g. 'Reds', 'Blues', 'Greens')
+#     """
+#     try:
+#         # Unpack model and tokenizer
+#         model, tokenizer = model_and_tokenizer
+        
+#         # 모델의 디바이스 확인
+#         device = next(model.parameters()).device
+#         print(f"Model device: {device}")  # 디버깅용
+        
+#         # 모델을 평가 모드로 설정
+#         model.eval()
+        
+#         # 원본 forward 함수 저장
+#         original_forward = model.forward
+        
+#         # forward 함수 래핑
+#         def wrapped_forward(*args, **kwargs):
+#             # 모든 텐서를 디바이스로 이동
+#             if args:
+#                 args = tuple(arg.to(device) if isinstance(arg, torch.Tensor) else arg for arg in args)
+#             if kwargs:
+#                 kwargs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in kwargs.items()}
+#             return original_forward(*args, **kwargs)
+        
+#         # 래핑된 forward 함수 설정
+#         model.forward = wrapped_forward
+        
+#         # FeatureAblation을 사용하여 LLMAttribution 설정
+#         fa = FeatureAblation(model)
+#         llm_attr = LLMAttribution(fa, tokenizer)
+        
+#         # TextTokenInput 생성
+#         skip_tokens = [1]
+#         inp = TextTokenInput(
+#             text=prompt,
+#             tokenizer=tokenizer,
+#             baselines=0,
+#             skip_tokens=skip_tokens
+#         )
+        
+#         # 모델 입력을 디바이스로 이동
+#         model_inputs = inp.to_model_input()
+#         if isinstance(model_inputs, dict):
+#             model_inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v 
+#                           for k, v in model_inputs.items()}
+#             inp._model_input = model_inputs
+        
+#         print("Input tensors prepared")  # 디버깅용
+        
+#         # 어트리뷰션 계산
+#         with torch.no_grad():
+#             attr_res = llm_attr.attribute(
+#                 inp=inp,
+#                 target=response,
+#                 skip_tokens=skip_tokens,
+#                 n_steps=50  # 어트리뷰션 계산의 정확도 향상
+#             )
+        
+#         print("Attribution completed successfully")  # 디버깅용
+        
+#         # 원본 forward 함수 복구
+#         model.forward = original_forward
+        
+#         # 기본 시각화
+#         plt.figure(figsize=(10, 5))  # 여기서 figure 크기 지정
+#         fig, ax = attr_res.plot_token_attr(show=False)
+        
+#         # cmap이 지정된 경우 히트맵의 컬러맵 직접 수정
+#         if cmap:
+#             # 기존의 히트맵 찾기
+#             for im in ax.get_images():
+#                 # 새로운 컬러맵으로 업데이트
+#                 im.set_cmap(cmap)
+        
+#         # 플롯 저장
+#         buf = BytesIO()
+#         fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+#         buf.seek(0)
+#         plt.close()
+
+#         return buf
+
+#     except Exception as e:
+#         print(f"Error generating heatmap: {e}")
+#         import traceback
+#         print(traceback.format_exc())
+#         return None
 def generate_heatmap(model_and_tokenizer, prompt, response):
-    """Generate heatmap using LLMAttribution for prompt attribution."""
+    """Generate heatmap using LLMAttribution for sentence-level attribution."""
     try:
         # Unpack model and tokenizer
         model, tokenizer = model_and_tokenizer
         
-        # 모델의 디바이스 확인
         device = next(model.parameters()).device
-        print(f"Model device: {device}")  # 디버깅용
+        print(f"Model device: {device}")
         
-        # 모델을 평가 모드로 설정
         model.eval()
         
-        # 원본 forward 함수 저장
         original_forward = model.forward
         
-        # forward 함수 래핑
         def wrapped_forward(*args, **kwargs):
-            # 모든 텐서를 디바이스로 이동
             if args:
                 args = tuple(arg.to(device) if isinstance(arg, torch.Tensor) else arg for arg in args)
             if kwargs:
                 kwargs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in kwargs.items()}
             return original_forward(*args, **kwargs)
         
-        # 래핑된 forward 함수 설정
         model.forward = wrapped_forward
         
-        # FeatureAblation을 사용하여 LLMAttribution 설정
         fa = FeatureAblation(model)
         llm_attr = LLMAttribution(fa, tokenizer)
         
-        # TextTokenInput 생성
-        skip_tokens = [1]
-        inp = TextTokenInput(
+        # 문장 단위로 나누기
+        response_lines = response.split("\n")
+        line_attributions = {}
+        
+        # TextTokenInput 사용
+        text_input = TextTokenInput(
             text=prompt,
             tokenizer=tokenizer,
-            baselines=0,
-            skip_tokens=skip_tokens
+            skip_tokens=[0, 1]  # 특수 토큰 스킵
         )
         
-        # 모델 입력을 디바이스로 이동
-        model_inputs = inp.to_model_input()
-        if isinstance(model_inputs, dict):
-            model_inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v 
-                          for k, v in model_inputs.items()}
-            inp._model_input = model_inputs
+        # 모델 입력 생성 후 디바이스로 이동
+        model_input = text_input.to_model_input()
+        if isinstance(model_input, torch.Tensor):
+            model_input = model_input.to(device)
+        elif isinstance(model_input, dict):
+            model_input = {k: v.to(device) if isinstance(v, torch.Tensor) else v 
+                         for k, v in model_input.items()}
         
-        print("Input tensors prepared")  # 디버깅용
+        print("Input tensors prepared")
         
-        # 어트리뷰션 계산
-        with torch.no_grad():
-            attr_res = llm_attr.attribute(
-                inp=inp,
-                target=response,
-                skip_tokens=skip_tokens,
-                n_steps=50  # 어트리뷰션 계산의 정확도 향상
-            )
-        
-        print("Attribution completed successfully")  # 디버깅용
-        
-        # 원본 forward 함수 복구
-        model.forward = original_forward
-        
+        # 각 라인별로 어트리뷰션 계산
+        for idx, line in enumerate(response_lines):
+            if line.strip():  # 빈 줄 제외
+                try:
+                    with torch.no_grad():
+                        attr_res = llm_attr.attribute(
+                            inp=text_input,
+                            # target=line,
+                            target=line.strip(),#추가
+                            n_steps=50
+                        )
+                
+                    # CUDA 텐서를 CPU로 이동 후 NumPy 배열로 변환
+                    token_attr_cpu = attr_res.token_attr.cpu().numpy()
+                
+                # 각 라인의 어트리뷰션 결과 저장
+                # line_attributions[str(idx)] = {
+                #     'line': line,
+                #     'attribution': token_attr_cpu.tolist(),
+                #     'input_tokens': attr_res.input_tokens
+                # }
+                    line_attributions[f"line_{idx}"] = {
+                        'line': line.strip(),
+                        'attribution': token_attr_cpu.tolist(),
+                        'input_tokens': attr_res.input_tokens
+                    }
+                except Exception as e:
+                    print(f"Error processing line {idx}: {e}")
+                    continue
         # 시각화
-        fig, ax = attr_res.plot_token_attr(show=False)
+        fig, axes = plt.subplots(len(line_attributions), 1, figsize=(15, 2 * len(line_attributions)))
+
+        if len(line_attributions) == 1:
+            axes = [axes]
+
+        for idx, (_, data) in enumerate(line_attributions.items()):
+            # y축 레이블 길이 제한
+            y_label = data['line'][:50] + "..." if len(data['line']) > 50 else data['line']
+            sns.heatmap(
+                np.array(data['attribution']).reshape(1, -1),
+                xticklabels=data['input_tokens'],  # x축 토큰
+                yticklabels=[y_label],            # y축 레이블
+                cmap="RdBu_r",
+                center=0,
+                vmin=-1,  # 컬러 스케일 최소값
+                vmax=1,   # 컬러 스케일 최대값
+                cbar_kws={"shrink": 0.5},         # 컬러바 크기 조정
+                ax=axes[idx]
+            )
+            # x축 레이블 회전 및 정렬
+            axes[idx].set_xticklabels(axes[idx].get_xticklabels(), rotation=45, ha="right")
+            axes[idx].set_yticklabels(axes[idx].get_yticklabels(), fontsize=10)
+
+
+        # 어트리뷰션 결과를 JSON으로 저장
+        # import tempfile
+        # import os
+        # temp_dir = tempfile.gettempdir()
+        # json_path = os.path.join(temp_dir, 'attribution_data.json')
+        # with open(json_path, 'w', encoding='utf-8') as f:
+        #     json.dump(line_attributions, f, ensure_ascii=False, indent=2)
+        
+        # # 시각화
+        # fig, axes = plt.subplots(len(line_attributions), 1, 
+        #                        figsize=(15, 3*len(line_attributions)))
+        # if len(line_attributions) == 1:
+        #     axes = [axes]
+        
+        # for idx, (_, data) in enumerate(line_attributions.items()):
+        #     sns.heatmap(np.array(data['attribution']).reshape(1, -1),
+        #                xticklabels=data['input_tokens'],
+        #                yticklabels=[data['line']],
+        #                cmap='RdBu_r',
+        #                center=0,
+        #                ax=axes[idx])
+        #     axes[idx].set_xticklabels(axes[idx].get_xticklabels(), rotation=45, ha='right')
+        
+        plt.tight_layout()
         
         # 플롯 저장
         buf = BytesIO()
@@ -82,6 +240,7 @@ def generate_heatmap(model_and_tokenizer, prompt, response):
         plt.close()
 
         return buf
+        
 
     except Exception as e:
         print(f"Error generating heatmap: {e}")
