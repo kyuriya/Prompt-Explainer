@@ -8,6 +8,7 @@ import json
 from datetime import datetime
 import numpy as np
 import seaborn as sns
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 # Ignore warnings
 warnings.filterwarnings("ignore", ".*past_key_values.*")
@@ -183,29 +184,68 @@ def generate_heatmap(model_and_tokenizer, prompt, response):
                 except Exception as e:
                     print(f"Error processing line {idx}: {e}")
                     continue
+        # # 시각화
+        # fig, axes = plt.subplots(len(line_attributions), 1, figsize=(15, 2 * len(line_attributions)))
+
+        # if len(line_attributions) == 1:
+        #     axes = [axes]
+
+        # for idx, (_, data) in enumerate(line_attributions.items()):
+        #     # y축 레이블 길이 제한
+        #     y_label = data['line'][:50] + "..." if len(data['line']) > 50 else data['line']
+        #     sns.heatmap(
+        #         np.array(data['attribution']).reshape(1, -1),
+        #         xticklabels=data['input_tokens'],  # x축 토큰
+        #         yticklabels=[y_label],            # y축 레이블
+        #         cmap="RdBu_r",
+        #         center=0,
+        #         vmin=-1,  # 컬러 스케일 최소값
+        #         vmax=1,   # 컬러 스케일 최대값
+        #         cbar_kws={"shrink": 0.5},         # 컬러바 크기 조정
+        #         ax=axes[idx]
+        #     )
+        #     # x축 레이블 회전 및 정렬
+        #     axes[idx].set_xticklabels(axes[idx].get_xticklabels(), rotation=45, ha="right")
+        #     axes[idx].set_yticklabels(axes[idx].get_yticklabels(), fontsize=10)
+        
+        # 데이터 스케일링
+        def normalize_attributions(attributions):
+            # StandardScaler로 정규화
+            scaler = StandardScaler()
+            standardized = scaler.fit_transform(attributions.reshape(-1, 1)).reshape(attributions.shape)
+            # [-1, 1] 범위로 변환
+            min_val = np.min(standardized)
+            max_val = np.max(standardized)
+            normalized = 2 * (standardized - min_val) / (max_val - min_val) - 1
+            return normalized
+
+        # 히트맵에 필요한 데이터 준비
+        token_labels = list(line_attributions.values())[0]['input_tokens']
+        attribution_matrix = np.array(
+            [np.mean(data['attribution'], axis=0) for data in line_attributions.values()]
+        )
+        y_labels = [data['line'][:50] + "..." if len(data['line']) > 50 else data['line'] 
+                    for data in line_attributions.values()]
+
+        # 정규화된 attribution_matrix
+        normalized_attribution_matrix = normalize_attributions(attribution_matrix)
+        
         # 시각화
-        fig, axes = plt.subplots(len(line_attributions), 1, figsize=(15, 2 * len(line_attributions)))
-
-        if len(line_attributions) == 1:
-            axes = [axes]
-
-        for idx, (_, data) in enumerate(line_attributions.items()):
-            # y축 레이블 길이 제한
-            y_label = data['line'][:50] + "..." if len(data['line']) > 50 else data['line']
-            sns.heatmap(
-                np.array(data['attribution']).reshape(1, -1),
-                xticklabels=data['input_tokens'],  # x축 토큰
-                yticklabels=[y_label],            # y축 레이블
-                cmap="RdBu_r",
-                center=0,
-                vmin=-1,  # 컬러 스케일 최소값
-                vmax=1,   # 컬러 스케일 최대값
-                cbar_kws={"shrink": 0.5},         # 컬러바 크기 조정
-                ax=axes[idx]
-            )
-            # x축 레이블 회전 및 정렬
-            axes[idx].set_xticklabels(axes[idx].get_xticklabels(), rotation=45, ha="right")
-            axes[idx].set_yticklabels(axes[idx].get_yticklabels(), fontsize=10)
+        plt.figure(figsize=(15, len(y_labels) * 0.8))
+        
+        sns.heatmap(
+            normalized_attribution_matrix,
+            xticklabels=token_labels,
+            yticklabels=y_labels,
+            cmap="RdBu_r",
+            center=0,
+            cbar_kws={"shrink": 0.5},
+            vmin=-1,
+            vmax=1
+        )
+        plt.xticks(rotation=45, ha="right")
+        plt.yticks(fontsize=10)
+        plt.tight_layout() 
 
 
         # 어트리뷰션 결과를 JSON으로 저장
@@ -235,7 +275,7 @@ def generate_heatmap(model_and_tokenizer, prompt, response):
         
         # 플롯 저장
         buf = BytesIO()
-        fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+        plt.savefig(buf, format="png", dpi=300, bbox_inches="tight")
         buf.seek(0)
         plt.close()
 

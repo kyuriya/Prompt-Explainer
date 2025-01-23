@@ -349,6 +349,7 @@ def render_main_page():
     #         except Exception as e:
     #             st.error(f"An error occurred: {str(e)}")
     if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
         if user_input.strip():
             try:
                 # LLM 응답 생성
@@ -360,7 +361,7 @@ def render_main_page():
                     if heatmap_buffer:
                         # Streamlit에 이미지 표시
                         st.markdown("### Prompt Attribution Heatmap")
-                        st.image(heatmap_buffer, caption="Attribution Heatmap", use_column_width=True)
+                        st.image(heatmap_buffer, caption="Attribution Heatmap", use_container_width=True)
 
                         # 채팅 메시지 기록에 추가
                         heatmap_base64 = base64.b64encode(heatmap_buffer.getvalue()).decode("utf-8")
