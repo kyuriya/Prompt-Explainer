@@ -23,8 +23,6 @@ if "current_page" not in st.session_state:
     st.session_state["current_page"] = 1  # 기본 페이지 번호
 if "current_prompt" not in st.session_state:
     st.session_state["current_prompt"] = None  # 기본 시스템 프롬프트 없음
-# if "model" not in st.session_state:
-#     st.session_state["model"] = initialize_model("gpt2")  # 모델 초기화
 if "model" not in st.session_state:
     st.session_state["model"] = initialize_model("Qwen/Qwen2.5-1.5B-Instruct")  # 올바른 모델 초기화
 if "greetings" not in st.session_state:

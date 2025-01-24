@@ -137,7 +137,26 @@ def generate_heatmap(model_and_tokenizer, prompt, response):
 
         # response 문자열이 "."로 시작하면 제거
         if response.startswith("."):
-            response = response[1:].strip()
+            response = response[1:]
+        # 코드블록이 있으면 그 내부만, 없으면 전체를 처리
+        match = re.search(r'```python\s+(.*?)\s+```', response, re.DOTALL)
+        if match:
+            code_block = match.group(1)
+            # 주석 제거
+            code_block = re.sub(r'#.*', '', code_block)
+            # docstring 제거
+            code_block = re.sub(r'""".*?"""', '', code_block, flags=re.DOTALL)
+            # return code_block.strip()
+            response = code_block.strip()
+        
+        else:
+            # 코드블록이 없어도 코드가 있을 수 있으므로, 주석/docstring만 제거 후 반환
+            no_comments = re.sub(r'#.*', '', response)
+            no_docstrings = re.sub(r'""".*?"""', '', no_comments, flags=re.DOTALL)
+            # return no_docstrings.strip()
+            # print(f"Generated response: {response}")  # 디버깅용
+            # return response.strip()  # 앞뒤 공백 제거
+            response = no_docstrings.strip()
 
         # 문장 단위로 나누기
         marker = f"```"
