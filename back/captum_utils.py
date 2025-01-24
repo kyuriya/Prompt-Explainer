@@ -133,9 +133,24 @@ def generate_heatmap(model_and_tokenizer, prompt, response):
         
         fa = FeatureAblation(model)
         llm_attr = LLMAttribution(fa, tokenizer)
-        
+
+        # response 문자열이 "."로 시작하면 제거
+        if response.startswith("."):
+            response = response[1:].strip()
+
         # 문장 단위로 나누기
-        response_lines = response.split("\n")
+        marker = f"```"
+        if marker in response:
+            response_body = response.split(marker, 1)[1]
+            if '\n' in response_body:
+                response_lines = response_body.split('\n', 1)[1].split('\n')
+            else:
+                response_lines = response.split("\n")
+        else:
+            response_lines = response.split("\n")
+
+        response_lines = [line for line in response_lines if "```" not in line]
+
         line_attributions = {}
         
         # TextTokenInput 사용
@@ -219,8 +234,14 @@ def generate_heatmap(model_and_tokenizer, prompt, response):
             normalized = 2 * (standardized - min_val) / (max_val - min_val) - 1
             return normalized
 
+        def clean_tokens(tokens):
+            """특수 기호 제거."""
+            # 리스트의 각 요소에 대해 'Ġ'를 제거
+            return [token.replace("Ġ", "") for token in tokens]
+
         # 히트맵에 필요한 데이터 준비
-        token_labels = list(line_attributions.values())[0]['input_tokens']
+        raw_token_labels = list(line_attributions.values())[0]['input_tokens']
+        token_labels = clean_tokens(raw_token_labels)
         attribution_matrix = np.array(
             [np.mean(data['attribution'], axis=0) for data in line_attributions.values()]
         )
@@ -233,7 +254,7 @@ def generate_heatmap(model_and_tokenizer, prompt, response):
         # 시각화
         plt.figure(figsize=(15, len(y_labels) * 0.8))
         
-        sns.heatmap(
+        ax = sns.heatmap(
             normalized_attribution_matrix,
             xticklabels=token_labels,
             yticklabels=y_labels,
@@ -243,9 +264,11 @@ def generate_heatmap(model_and_tokenizer, prompt, response):
             vmin=-1,
             vmax=1
         )
-        plt.xticks(rotation=45, ha="right")
+
+        ax.xaxis.tick_top()
+        plt.xticks(rotation=45, ha="center")
         plt.yticks(fontsize=10)
-        plt.tight_layout() 
+        plt.tight_layout()
 
 
         # 어트리뷰션 결과를 JSON으로 저장

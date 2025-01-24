@@ -22,10 +22,17 @@ def get_huggingface_response(model_and_tokenizer, prompt, max_length=100):
         # pad_token이 없으면 eos_token을 pad_token으로 설정
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
+
+        # Define the system prompt with the description
+        system_prompt = (
+            "Generate only Python code with embedded doctests for the given task. Do not include any other comments or explanations outside the code.\n"
+        )
         
+        full_prompt = system_prompt + prompt
+                
         # 입력을 모델의 디바이스로 이동
         inputs = tokenizer(
-            prompt,
+            full_prompt,
             return_tensors="pt",
             padding=True,
             truncation=True,
