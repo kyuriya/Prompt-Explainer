@@ -350,6 +350,7 @@ def render_main_page():
     #             st.error(f"An error occurred: {str(e)}")
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
+        
         if user_input.strip():
             try:
                 # LLM 응답 생성

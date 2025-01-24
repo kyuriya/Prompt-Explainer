@@ -9,6 +9,7 @@ from datetime import datetime
 import numpy as np
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+import re
 
 # Ignore warnings
 warnings.filterwarnings("ignore", ".*past_key_values.*")

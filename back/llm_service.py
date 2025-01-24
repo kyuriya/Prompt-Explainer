@@ -25,8 +25,11 @@ def get_huggingface_response(model_and_tokenizer, prompt, max_length=100):
 
         # Define the system prompt with the description
         system_prompt = (
-            "Generate only the Python code for the given task. Do not include comments or explanations in the code. Ensure the code is complete and functional.\n"
-        )
+        "Generate only code for the given task in the language specified by the user. "
+        "Output the code wrapped in a code block using triple backticks (`) with the appropriate language tag. "
+        "Never include any comments, explanations, docstrings or additional descriptions inside the code. "
+        "Only provide the functional and complete code inside the code.\n"
+        )   
         
         full_prompt = system_prompt + prompt
                 
