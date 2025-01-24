@@ -13,7 +13,7 @@ def initialize_model(model_name="Qwen/Qwen2.5-1.5B-Instruct", device=0):
     model = AutoModelForCausalLM.from_pretrained(model_name).to(f"cuda:{device}" if device >= 0 else "cpu")
     return model, tokenizer
 
-def get_huggingface_response(model_and_tokenizer, prompt, max_length=100):
+def get_huggingface_response(model_and_tokenizer, prompt, max_length=200):
     """Hugging Face 모델로부터 응답 생성"""
     try:
         model, tokenizer = model_and_tokenizer
@@ -26,8 +26,8 @@ def get_huggingface_response(model_and_tokenizer, prompt, max_length=100):
         # Define the system prompt with the description
         system_prompt = (
         "Generate only code for the given task. "
-        # "Output the code wrapped in a code block using triple backticks (`) with the appropriate language tag. "
-        "Never include any comments, explanations, docstrings or additional descriptions inside the code. "
+        # "Output the code wrapped in a code block using triple backticks with the appropriate language tag. "
+        # "Never include any comments, explanations, docstrings or additional descriptions inside the code. "
         # "Only provide the functional and complete code inside the code.\n"
         )   
         
