@@ -25,7 +25,7 @@ def get_huggingface_response(model_and_tokenizer, prompt, max_length=100):
 
         # Define the system prompt with the description
         system_prompt = (
-            "Generate only Python code with embedded doctests for the given task. Do not include any other comments or explanations outside the code.\n"
+            "Generate only the Python code for the given task. Do not include comments or explanations in the code. Ensure the code is complete and functional.\n"
         )
         
         full_prompt = system_prompt + prompt
