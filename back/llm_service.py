@@ -32,14 +32,14 @@ def get_huggingface_response(model_and_tokenizer, user_solution_method, max_leng
             "1. NO comments or docstrings\n"
             "2. NO explanations\n"
             "3. NO text outside code block\n"
-
+            
             "Task: Given an array of integers, find the most frequently occurring element.\n"
             "Example array: [1,2,2,3,2,1,4,2]\n"
             "Expected output: 2"
         )
         
         # 사용자가 제시한 해결 방법을 프롬프트에 추가
-        full_prompt = f"{system_prompt}\nSolve this using: {user_solution_method}"
+        full_prompt = f"{system_prompt}\n{user_solution_method}"
         
         # 입력을 모델의 디바이스로 이동
         inputs = tokenizer(
